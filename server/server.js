@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { putEntry, deleteEntry, listEntries, countEntries } from './store.js';
-import { makeToken, readToken, findUser, passcodeRequired, passcodeOk } from './auth.js';
+import { makeToken, readToken, findUser, listUsers, passcodeRequired, passcodeOk } from './auth.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(here, '..', 'public');
@@ -122,8 +122,13 @@ async function handleApi(req, res, url) {
     });
   }
 
+  // usersConfigured is a yes/no only — never the names themselves. It exists so
+  // a deploy can be checked without guessing at the server's env.
   if (route === '/api/config') {
-    return sendJson(res, 200, { passcodeRequired: passcodeRequired() });
+    return sendJson(res, 200, {
+      passcodeRequired: passcodeRequired(),
+      usersConfigured: listUsers().length > 0,
+    });
   }
 
   const user = auth(req);

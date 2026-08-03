@@ -29,6 +29,41 @@ let usersCache = null;
 let usersMtime = 0;
 let warned = false;
 
+const clean = (list) =>
+  (Array.isArray(list) ? list : [])
+    .map((u) => ({ username: String(u?.username ?? '').trim(), name: String(u?.name ?? '').trim() }))
+    .filter((u) => u.username && u.name);
+
+/**
+ * Accepts either JSON:
+ *   [{"username":"a","name":"A"},{"username":"b","name":"B"}]
+ * or a compact form that survives copy-paste into a hosting panel:
+ *   a:A,b:B
+ * Surrounding quotes and stray whitespace are tolerated, because control
+ * panels frequently store the value wrapped in its own quotes.
+ */
+export function parseUsers(raw) {
+  const text = String(raw ?? '').trim().replace(/^["']|["']$/g, '').trim();
+  if (!text) return null;
+
+  if (text.startsWith('[')) {
+    try {
+      const list = clean(JSON.parse(text));
+      return list.length ? list : null;
+    } catch {
+      return null;
+    }
+  }
+
+  const list = clean(
+    text.split(',').map((pair) => {
+      const i = pair.indexOf(':');
+      return i < 1 ? null : { username: pair.slice(0, i), name: pair.slice(i + 1) };
+    })
+  );
+  return list.length ? list : null;
+}
+
 /**
  * Users come from the USERS env var if set, otherwise server/users.json.
  * users.json is deliberately NOT in git: with username-only login, a username
@@ -36,13 +71,15 @@ let warned = false;
  */
 export function listUsers() {
   if (process.env.USERS) {
-    try {
-      return JSON.parse(process.env.USERS);
-    } catch {
-      if (!warned) {
-        console.error('USERS env var is not valid JSON — falling back to users.json');
-        warned = true;
-      }
+    const parsed = parseUsers(process.env.USERS);
+    if (parsed) return parsed;
+    if (!warned) {
+      console.error(
+        'USERS env var could not be parsed. Use either ' +
+        '[{"username":"a","name":"A"}] or the simpler a:A,b:B — got: ' +
+        JSON.stringify(String(process.env.USERS).slice(0, 80))
+      );
+      warned = true;
     }
   }
   try {

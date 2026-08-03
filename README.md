@@ -31,13 +31,28 @@ cp server/users.example.json server/users.json
 ```
 
 …or set a `USERS` environment variable instead, which is easier on Hostinger
-because it survives a redeploy:
+because it survives a redeploy. Two accepted formats — the compact one is
+recommended in a hosting panel, where JSON punctuation often gets mangled:
 
 ```
-USERS=[{"username":"someone","name":"Their Name"},{"username":"someone-else","name":"Their Name"}]
+USERS=someone:Their Name,someone-else:Their Name
 ```
 
-`USERS` wins if both are present. The username is what you type at login; the
+```
+USERS=[{"username":"someone","name":"Their Name"}]
+```
+
+Surrounding quotes and stray spaces are tolerated. `USERS` wins if both it and
+the file are present.
+
+To check whether a deployed server picked it up, without exposing the names:
+
+```bash
+curl -s https://your-domain/api/config
+```
+
+`{"passcodeRequired":false,"usersConfigured":true}` means it worked. If it says
+`false`, the variable is missing or unparseable, and the startup log says which. The username is what you type at login; the
 name is what gets written to the log. The file is re-read on change — no restart
 needed. Until one of the two is set, nobody can log in and the server says so on
 startup.
