@@ -101,6 +101,11 @@ export function listUsers() {
   return usersCache;
 }
 
+/** Whether server/users.json exists on disk — for deploy diagnostics. */
+export function usersFileExists() {
+  return fs.existsSync(USERS_FILE);
+}
+
 export function findUser(username) {
   if (typeof username !== 'string') return null;
   const key = username.trim().toLowerCase();
