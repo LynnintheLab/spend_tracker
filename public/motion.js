@@ -29,9 +29,28 @@ function aimHighlight(node, event) {
   node.style.setProperty('--gradient-angle', `${deg}deg`);
 }
 
+/**
+ * Adds the dispersion rim — the coloured fringe real glass throws at its edges
+ * when light bends through it, and the thing that makes iOS 26's glass read as
+ * glass rather than as a frosted rectangle. Idle it is invisible; it blooms
+ * under a press. Only glassed controls get one; a flat list row shouldn't.
+ */
+function ensureRim(node) {
+  if (!node.querySelector(':scope > .liquid-glass')) return;
+  if (node.querySelector(':scope > .rim')) return;
+  const rim = document.createElement('span');
+  rim.className = 'rim';
+  rim.setAttribute('aria-hidden', 'true');
+  node.append(rim);
+}
+
 function press(node, depth) {
   node.__pressed = true;
-  node.animate(
+  node.classList.add('is-pressed');
+  node.__settle?.cancel();
+  node.__settle = null;
+  node.__press?.cancel();
+  node.__press = node.animate(
     [{ transform: `scale(${depth})` }],
     { duration: 130, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'forwards' }
   );
@@ -40,12 +59,29 @@ function press(node, depth) {
 function release(node, depth) {
   if (!node.__pressed) return;
   node.__pressed = false;
-  const animation = node.animate(
+  node.classList.remove('is-pressed');
+
+  const settle = node.animate(
     [{ transform: `scale(${depth})` }, { transform: 'scale(1)' }],
     { duration: reduced.matches ? 120 : 420, easing: reduced.matches ? 'ease-out' : SETTLE, fill: 'forwards' }
   );
+  node.__settle = settle;
+
+  // The press also fills forwards. Started before this settle is cleaned up, it
+  // would take over again the moment the settle is cancelled and leave the
+  // control stuck compressed — visible after a few fast taps. Retire it now;
+  // the settle's own first keyframe holds the compressed pose meanwhile.
+  node.__press?.cancel();
+  node.__press = null;
+
   // Hand the element back to CSS once it has settled, so nothing accumulates.
-  animation.finished.then(() => animation.cancel()).catch(() => {});
+  settle.finished
+    .then(() => {
+      if (node.__settle !== settle) return; // a newer press already took over
+      settle.cancel();
+      node.__settle = null;
+    })
+    .catch(() => {});
 }
 
 /**
@@ -55,6 +91,7 @@ function release(node, depth) {
 export function interactive(node, depth = 0.96) {
   if (!node || node.dataset.motion) return;
   node.dataset.motion = '1';
+  ensureRim(node);
 
   node.addEventListener('pointermove', (e) => aimHighlight(node, e));
   node.addEventListener('pointerdown', (e) => {
