@@ -464,9 +464,37 @@ async function boot() {
     el.loginUser.focus();
   }
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  }
+  registerServiceWorker();
+}
+
+/**
+ * Registers the worker and picks up new deployments on the spot.
+ *
+ * A service worker keeps serving its cached copy of the app until a launch
+ * where no old page is left running, so without this a deploy shows up one
+ * launch late — you reload, still see the old build, and reasonably conclude
+ * the deploy failed. The worker calls skipWaiting/clients.claim, so a new
+ * version takes over the page as soon as it installs and fires
+ * `controllerchange`; reloading there swaps in the new assets immediately.
+ */
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+
+  // No controller on a first-ever visit: the worker claiming the page then is
+  // not an update, and reloading for it would be a pointless flash.
+  const hadController = Boolean(navigator.serviceWorker.controller);
+  let reloading = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return;
+    // Never throw away something half-typed. The update is already installed;
+    // it will be live on the next launch regardless.
+    if (el.amount.value || el.note.value) return;
+    reloading = true;
+    location.reload();
+  });
+
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
 
 boot();
