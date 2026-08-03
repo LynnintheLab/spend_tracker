@@ -67,7 +67,8 @@ function roundedRect(px, py, cx, cy, hx, hy, r) {
   return outside + Math.min(Math.max(qx, qy), 0) - r;
 }
 
-const BG = [15, 17, 21];
+// #2f6bed — the same blue as the dot field in glass.css.
+const BG = [47, 107, 237];
 const FG = [255, 255, 255];
 
 /** A banknote outline with a coin in the middle. `mark` scales the glyph. */
