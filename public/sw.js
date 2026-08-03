@@ -1,10 +1,11 @@
 // Bump this version string after changing any shell file to force a refresh.
-const CACHE = 'spend-note-v5';
+const CACHE = 'spend-note-v6';
 const SHELL = [
   '/',
   '/index.html',
   '/styles.css',
   '/glass.css',
+  '/motion.js',
   '/vendor/liquid-glass/liquid-glass.css',
   '/vendor/liquid-glass/liquid-glass.js',
   '/app.js',

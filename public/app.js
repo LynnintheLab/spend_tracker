@@ -1,5 +1,6 @@
 import { db } from './db.js';
 import { applyLiquidGlass } from './vendor/liquid-glass/liquid-glass.js';
+import { interactive } from './motion.js';
 
 // Tap the label under the amount to switch. First entry in the list is the
 // default; add or rename here and the server list in server/server.js to match.
@@ -26,26 +27,34 @@ let syncing = false;
 
 /* --------------------------------------------------------------------- glass */
 
-/** Glass a node once. Re-applying would stack a second overlay inside it. */
-function glass(node, intensity = 'normal') {
+/**
+ * Glass a node once. Re-applying would stack a second overlay inside it.
+ * `press` opts the node into the pointer-tracking highlight and press-spring;
+ * panels get the glass but not the motion — only things you tap should move.
+ */
+function glass(node, intensity = 'normal', press = 0) {
   if (!node || node.dataset.glassed) return;
   node.dataset.glassed = '1';
   applyLiquidGlass(node, { intensity });
+  if (press) interactive(node, press);
 }
 
 function applyGlass() {
-  glass(el.saveBtn, 'strong');
-  glass(el.loginForm.querySelector('.btn.primary'), 'strong');
-  glass(el.currency, 'subtle');
+  // Big surfaces compress less than small ones — a 4% squash on a full-width
+  // button reads the same as 8% on a 44px circle.
+  glass(el.saveBtn, 'strong', 0.97);
+  glass(el.loginForm.querySelector('.btn.primary'), 'strong', 0.97);
+  glass(el.currency, 'subtle', 0.92);
   glass(el.note, 'subtle');
-  glass(el.menuBtn, 'subtle');
+  glass(el.menuBtn, 'subtle', 0.9);
   glass(el.pending, 'subtle');
-  glass(el.historyBack, 'subtle');
+  glass(el.historyBack, 'subtle', 0.9);
   glass(el.loginUser, 'subtle');
   glass(el.loginPass, 'subtle');
   // el.sheet is the dimming backdrop; the panel itself is the nav inside it.
   glass(document.querySelector('.sheet'));
   glass(document.querySelector('.login-card'), 'subtle');
+  for (const item of document.querySelectorAll('.sheet-item')) interactive(item, 0.985);
 }
 
 /* ------------------------------------------------------------------ currency */

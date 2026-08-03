@@ -5,8 +5,15 @@
    Nothing in vendor/ is edited — all local changes live here. */
 
 /* ---------------------------------------------------------------- backdrop */
-/* Radial gradients, not blurred divs: a gradient is soft by nature, so this
-   costs no filter passes and the drift animation stays transform-only. */
+/* A drifting dot field: white dots on dark, black dots on light. Each layer is
+   one repeating radial-gradient — no elements per dot, no canvas, no library.
+   The layers are oversized and moved by exactly one tile, so the drift loops
+   seamlessly and stays a GPU-composited transform rather than a repaint. */
+
+:root { --dot: rgba(255, 255, 255, .30); }
+@media (prefers-color-scheme: light) {
+  :root { --dot: rgba(0, 0, 0, .26); }
+}
 
 /* body must not paint a background of its own: a block-level box background is
    painted after negative-z-index descendants, so an opaque body would bury the
@@ -22,30 +29,33 @@ body { background: transparent; }
   pointer-events: none;
 }
 
-.blob {
+.dots {
   position: absolute;
-  width: 78vmin;
-  height: 78vmin;
-  border-radius: 50%;
+  inset: -60px; /* oversized so the drifting edges never come into view */
   will-change: transform;
 }
 
-.b1 { top: -18vmin; left: -14vmin; background: radial-gradient(circle, rgba(99, 91, 255, .55), transparent 68%); animation: drift1 34s ease-in-out infinite alternate; }
-.b2 { bottom: -22vmin; right: -16vmin; background: radial-gradient(circle, rgba(0, 190, 190, .42), transparent 68%); animation: drift2 41s ease-in-out infinite alternate; }
-.b3 { top: 34%; left: 28%; background: radial-gradient(circle, rgba(226, 60, 150, .34), transparent 68%); animation: drift3 47s ease-in-out infinite alternate; }
-
-@media (prefers-color-scheme: light) {
-  .b1 { background: radial-gradient(circle, rgba(129, 140, 248, .55), transparent 68%); }
-  .b2 { background: radial-gradient(circle, rgba(45, 212, 191, .45), transparent 68%); }
-  .b3 { background: radial-gradient(circle, rgba(244, 114, 182, .40), transparent 68%); }
+/* Near layer: bigger dots, tighter grid, faster. */
+.near {
+  background-image: radial-gradient(var(--dot) 1.6px, transparent 1.6px);
+  background-size: 30px 30px;
+  animation: drift-near 24s linear infinite;
 }
 
-@keyframes drift1 { to { transform: translate3d(16vmin, 10vmin, 0) scale(1.15); } }
-@keyframes drift2 { to { transform: translate3d(-14vmin, -12vmin, 0) scale(1.1); } }
-@keyframes drift3 { to { transform: translate3d(10vmin, -16vmin, 0) scale(.9); } }
+/* Far layer: smaller and dimmer, drifting the other way — that difference is
+   what reads as depth once the glass blurs it. */
+.far {
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 52px 52px;
+  opacity: .55;
+  animation: drift-far 47s linear infinite;
+}
+
+@keyframes drift-near { to { transform: translate3d(30px, 30px, 0); } }
+@keyframes drift-far { to { transform: translate3d(-52px, 26px, 0); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .blob { animation: none; }
+  .dots { animation: none; }
 }
 
 /* ------------------------------------------------------- glass host surfaces */
@@ -151,6 +161,14 @@ textarea.liquid-glass-direct,
   .sheet-item { border-top-color: rgba(0, 0, 0, .1); }
   .sheet-item:active { background: rgba(0, 0, 0, .06); }
   .row { border-top-color: rgba(0, 0, 0, .08); }
+}
+
+/* ----------------------------------------------------------------- motion */
+/* Presses are driven by the Web Animations API in motion.js. The old CSS
+   :active transform would fight it, so it stands down here. */
+.btn:active,
+.icon-btn:active {
+  transform: none;
 }
 
 /* --------------------------------------------------------------- contrast */
