@@ -1,0 +1,9 @@
+node_modules/
+data/
+*.log
+.DS_Store
+.impeccable/
+
+# Login is username-only, so a username IS a credential. Keep the real list out
+# of the repo — configure it on the server (see README).
+server/users.json

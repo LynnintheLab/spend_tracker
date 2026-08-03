@@ -1,0 +1,15 @@
+{
+  "name": "spend-note",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal offline-first spending note PWA with a zero-dependency Node server",
+  "type": "module",
+  "main": "app.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "icons": "node tools/make-icons.mjs"
+  }
+}

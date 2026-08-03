@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Spend Note</title>
+<meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spend">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/vendor/liquid-glass/liquid-glass.css">
+<link rel="stylesheet" href="/glass.css">
+</head>
+<body>
+
+<!-- Glass needs something behind it to bend. Without this the panels would be
+     flat translucent rectangles on a flat colour. -->
+<div class="backdrop" aria-hidden="true">
+  <span class="blob b1"></span>
+  <span class="blob b2"></span>
+  <span class="blob b3"></span>
+</div>
+
+<!-- Login -->
+<section id="login" class="screen center" hidden>
+  <form id="loginForm" class="login-card" autocomplete="on">
+    <h1 class="login-title">Spend Note</h1>
+    <input id="loginUser" class="field" type="text" name="username" placeholder="username"
+           autocapitalize="none" autocorrect="off" spellcheck="false" required>
+    <input id="loginPass" class="field" type="password" name="password" placeholder="passcode" hidden>
+    <button class="btn primary" type="submit">Continue</button>
+    <p id="loginError" class="error" role="alert"></p>
+  </form>
+</section>
+
+<!-- Home -->
+<section id="home" class="screen" hidden>
+  <header class="topbar">
+    <!-- Labels live in child spans: the glass overlay is injected as a child,
+         so writing textContent on the host would delete it. -->
+    <span id="pending" class="pill" hidden><span id="pendingText"></span></span>
+    <button id="menuBtn" class="icon-btn" aria-label="Menu" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </header>
+
+  <form id="entryForm" class="entry">
+    <div class="amount-wrap">
+      <input id="amount" class="amount" type="text" inputmode="decimal" placeholder="0"
+             autocomplete="off" enterkeyhint="next" aria-label="Amount">
+      <button id="currency" class="currency" type="button" aria-label="Currency — tap to switch"><span id="currencyLabel">THB</span></button>
+    </div>
+    <input id="note" class="note" type="text" placeholder="note" autocomplete="off"
+           enterkeyhint="done" maxlength="120" aria-label="Note">
+    <button id="saveBtn" class="btn primary big" type="submit">Save</button>
+  </form>
+</section>
+
+<!-- Menu sheet -->
+<div id="sheet" class="sheet-backdrop" hidden>
+  <nav class="sheet" role="dialog" aria-modal="true" aria-label="Menu">
+    <div class="sheet-head">
+      <div>
+        <div id="whoName" class="who-name"></div>
+        <div id="whoStatus" class="who-status"></div>
+      </div>
+      <button id="sheetClose" class="icon-btn" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <button class="sheet-item" data-action="history">History</button>
+    <button class="sheet-item" data-action="sync">Sync now</button>
+    <button class="sheet-item" data-action="export">Export CSV</button>
+    <button class="sheet-item danger" data-action="logout">Log out</button>
+  </nav>
+</div>
+
+<!-- History -->
+<section id="history" class="screen" hidden>
+  <header class="topbar">
+    <button id="historyBack" class="icon-btn" aria-label="Back">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2 class="topbar-title">History</h2>
+    <span class="spacer"></span>
+  </header>
+  <div id="historyList" class="history-list"></div>
+</section>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

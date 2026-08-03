@@ -1,0 +1,173 @@
+/* Liquid-glass integration layer.
+   Loads after vendor/liquid-glass/liquid-glass.css and adapts it to this app:
+   a backdrop for the glass to work against, dark-theme tinting, and the
+   contrast fixes translucent surfaces always need.
+   Nothing in vendor/ is edited — all local changes live here. */
+
+/* ---------------------------------------------------------------- backdrop */
+/* Radial gradients, not blurred divs: a gradient is soft by nature, so this
+   costs no filter passes and the drift animation stays transform-only. */
+
+/* body must not paint a background of its own: a block-level box background is
+   painted after negative-z-index descendants, so an opaque body would bury the
+   backdrop. html keeps the base colour and propagates it to the canvas. */
+body { background: transparent; }
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--bg);
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  width: 78vmin;
+  height: 78vmin;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.b1 { top: -18vmin; left: -14vmin; background: radial-gradient(circle, rgba(99, 91, 255, .55), transparent 68%); animation: drift1 34s ease-in-out infinite alternate; }
+.b2 { bottom: -22vmin; right: -16vmin; background: radial-gradient(circle, rgba(0, 190, 190, .42), transparent 68%); animation: drift2 41s ease-in-out infinite alternate; }
+.b3 { top: 34%; left: 28%; background: radial-gradient(circle, rgba(226, 60, 150, .34), transparent 68%); animation: drift3 47s ease-in-out infinite alternate; }
+
+@media (prefers-color-scheme: light) {
+  .b1 { background: radial-gradient(circle, rgba(129, 140, 248, .55), transparent 68%); }
+  .b2 { background: radial-gradient(circle, rgba(45, 212, 191, .45), transparent 68%); }
+  .b3 { background: radial-gradient(circle, rgba(244, 114, 182, .40), transparent 68%); }
+}
+
+@keyframes drift1 { to { transform: translate3d(16vmin, 10vmin, 0) scale(1.15); } }
+@keyframes drift2 { to { transform: translate3d(-14vmin, -12vmin, 0) scale(1.1); } }
+@keyframes drift3 { to { transform: translate3d(10vmin, -16vmin, 0) scale(.9); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .blob { animation: none; }
+}
+
+/* ------------------------------------------------------- glass host surfaces */
+/* The library injects an absolutely-positioned child at z-index -1, so every
+   host has to be transparent or it would cover its own glass. */
+
+.btn.primary,
+.sheet,
+.login-card .field,
+.note,
+.currency,
+.icon-btn,
+.pill,
+.day {
+  background: transparent;
+}
+
+/* Softer than the library default: its 2px white border reads as a hard edge
+   against a dark UI. */
+input.liquid-glass-direct,
+textarea.liquid-glass-direct,
+[class*="liquid-glass-direct"] {
+  border: 1px solid rgba(255, 255, 255, .28);
+}
+
+@media (prefers-color-scheme: light) {
+  input.liquid-glass-direct,
+  textarea.liquid-glass-direct,
+  [class*="liquid-glass-direct"] {
+    border-color: rgba(255, 255, 255, .75);
+  }
+}
+
+/* The rim highlight is tuned for light backgrounds; halve it on dark. */
+@media (prefers-color-scheme: dark) {
+  .liquid-glass::after {
+    background: linear-gradient(
+      var(--gradient-angle, 135deg),
+      rgba(255, 255, 255, .45) 0%,
+      rgba(255, 255, 255, .08) 25%,
+      rgba(255, 255, 255, .08) 75%,
+      rgba(255, 255, 255, .45) 100%
+    );
+  }
+}
+
+/* -------------------------------------------------------------- components */
+
+/* Primary actions (Save, Continue) — the surfaces that should read as solid
+   glass rather than a hint, so they still look like the thing to press. */
+.btn.primary {
+  color: var(--fg);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.btn.primary > .liquid-glass { background: rgba(255, 255, 255, .22); }
+@media (prefers-color-scheme: light) {
+  .btn.primary > .liquid-glass { background: rgba(255, 255, 255, .5); }
+}
+
+/* Currency toggle: a small glass lozenge under the amount. */
+.currency {
+  border: 0;
+  color: var(--fg);
+  opacity: .85;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.currency:active { opacity: 1; }
+
+/* Note field: glass pill instead of the underline. */
+.note {
+  border-bottom: 0;
+  border-radius: 16px;
+  padding: 15px 18px;
+}
+.note:focus { border-bottom-color: transparent; }
+
+.icon-btn, .pill { border-radius: 999px; overflow: hidden; }
+.pill { border: 0; color: var(--fg); opacity: .85; }
+
+.login-card .field { border: 0; border-radius: 16px; }
+/* The glass overlay inherits its host's radius, so the host needs one. */
+.login-card { border-radius: 24px; padding: 22px; overflow: hidden; }
+
+/* Menu sheet: the big glass panel. */
+.sheet {
+  border-radius: 26px 26px 0 0;
+  overflow: hidden;
+}
+.sheet-backdrop { background: rgba(0, 0, 0, .28); }
+.sheet-item { border-top-color: rgba(255, 255, 255, .12); }
+.sheet-item:active { background: rgba(255, 255, 255, .12); }
+
+/* Sticky day header floats as glass while rows scroll under it. */
+.day {
+  padding: 14px 16px 12px;
+  overflow: hidden;
+}
+.row { border-top-color: rgba(255, 255, 255, .1); }
+
+@media (prefers-color-scheme: light) {
+  .sheet-item { border-top-color: rgba(0, 0, 0, .1); }
+  .sheet-item:active { background: rgba(0, 0, 0, .06); }
+  .row { border-top-color: rgba(0, 0, 0, .08); }
+}
+
+/* --------------------------------------------------------------- contrast */
+/* Translucency costs legibility. Text sitting on glass gets a faint shadow so
+   it stays readable when a bright part of the backdrop drifts underneath. */
+
+.amount, .btn.primary, .row-note, .row-amount, .topbar-title, .who-name,
+.sheet-item, .login-title {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+}
+@media (prefers-color-scheme: light) {
+  .amount, .btn.primary, .row-note, .row-amount, .topbar-title, .who-name,
+  .sheet-item, .login-title {
+    text-shadow: 0 1px 2px rgba(255, 255, 255, .55);
+  }
+}
+
+/* Placeholders lose contrast fastest against a moving backdrop. */
+.amount::placeholder { color: rgba(128, 132, 142, .5); }
+.note::placeholder, .field::placeholder { color: var(--muted); }
