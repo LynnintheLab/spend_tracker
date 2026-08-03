@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>Spend Note</title>
-<meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#f6f8fc">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Spend">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/icon-180.png">
@@ -18,11 +18,13 @@
 </head>
 <body>
 
-<!-- Glass needs something behind it to bend. Two dot layers drifting at
-     different speeds give it texture and a sense of depth. -->
+<!-- Glass needs something behind it to bend. A fixed dot grid, lit by bands of
+     brightness sweeping across it — see the backdrop section of glass.css. -->
 <div class="backdrop" aria-hidden="true">
-  <span class="dots near"></span>
-  <span class="dots far"></span>
+  <div class="dots">
+    <span class="wave w1"></span>
+    <span class="wave w2"></span>
+  </div>
 </div>
 
 <!-- Login -->

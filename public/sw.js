@@ -1,5 +1,5 @@
 // Bump this version string after changing any shell file to force a refresh.
-const CACHE = 'spend-note-v6';
+const CACHE = 'spend-note-v7';
 const SHELL = [
   '/',
   '/index.html',

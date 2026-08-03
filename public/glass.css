@@ -5,14 +5,19 @@
    Nothing in vendor/ is edited — all local changes live here. */
 
 /* ---------------------------------------------------------------- backdrop */
-/* A drifting dot field: white dots on dark, black dots on light. Each layer is
-   one repeating radial-gradient — no elements per dot, no canvas, no library.
-   The layers are oversized and moved by exactly one tile, so the drift loops
-   seamlessly and stays a GPU-composited transform rather than a repaint. */
+/* A fixed grid of faded blue dots, lit by soft bands of brightness that sweep
+   across it — the dots never move, the light does.
 
-:root { --dot: rgba(255, 255, 255, .30); }
-@media (prefers-color-scheme: light) {
-  :root { --dot: rgba(0, 0, 0, .26); }
+   The trick: .dots is masked into a dot pattern, so anything painted inside it
+   is only visible at the dot positions. The .wave children are plain gradients
+   that slide underneath that mask. Only their transform animates, so the
+   compositor owns the whole effect and the main thread stays free for typing.
+   No canvas, no per-dot elements, no JavaScript. */
+
+:root {
+  --dot: #2f6bed;
+  --dot-rest: rgba(47, 107, 237, .09);   /* the grid at its dimmest */
+  --dot-peak: rgba(47, 107, 237, .30);   /* a dot inside the wave */
 }
 
 /* body must not paint a background of its own: a block-level box background is
@@ -31,31 +36,48 @@ body { background: transparent; }
 
 .dots {
   position: absolute;
-  inset: -60px; /* oversized so the drifting edges never come into view */
+  inset: 0;
+  background: var(--dot-rest);
+  -webkit-mask-image: radial-gradient(#000 1.7px, transparent 1.9px);
+  mask-image: radial-gradient(#000 1.7px, transparent 1.9px);
+  -webkit-mask-size: 30px 30px;
+  mask-size: 30px 30px;
+}
+
+/* Oversized so a band is always mid-sweep and its edges never show. */
+.wave {
+  position: absolute;
+  inset: -55%;
   will-change: transform;
 }
 
-/* Near layer: bigger dots, tighter grid, faster. */
-.near {
-  background-image: radial-gradient(var(--dot) 1.6px, transparent 1.6px);
-  background-size: 30px 30px;
-  animation: drift-near 24s linear infinite;
+/* Two bands at different angles and speeds. Where they cross, dots peak
+   brighter — that interference is what stops it reading as a metronome. */
+.w1 {
+  background: linear-gradient(112deg,
+    transparent 34%, var(--dot-peak) 47%, var(--dot-peak) 53%, transparent 66%);
+  animation: wave-1 14s ease-in-out infinite alternate;
+}
+.w2 {
+  background: linear-gradient(68deg,
+    transparent 38%, var(--dot-peak) 49%, transparent 62%);
+  opacity: .7;
+  animation: wave-2 21s ease-in-out infinite alternate;
 }
 
-/* Far layer: smaller and dimmer, drifting the other way — that difference is
-   what reads as depth once the glass blurs it. */
-.far {
-  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
-  background-size: 52px 52px;
-  opacity: .55;
-  animation: drift-far 47s linear infinite;
+/* alternate + ease-in-out: the band eases to a stop and returns, so there is
+   no jump-cut at the loop point the way a linear one-way sweep would give. */
+@keyframes wave-1 {
+  from { transform: translate3d(-26%, -14%, 0); }
+  to { transform: translate3d(26%, 14%, 0); }
 }
-
-@keyframes drift-near { to { transform: translate3d(30px, 30px, 0); } }
-@keyframes drift-far { to { transform: translate3d(-52px, 26px, 0); } }
+@keyframes wave-2 {
+  from { transform: translate3d(22%, -10%, 0); }
+  to { transform: translate3d(-22%, 10%, 0); }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .dots { animation: none; }
+  .wave { animation: none; opacity: .35; }
 }
 
 /* ------------------------------------------------------- glass host surfaces */
@@ -78,28 +100,7 @@ body { background: transparent; }
 input.liquid-glass-direct,
 textarea.liquid-glass-direct,
 [class*="liquid-glass-direct"] {
-  border: 1px solid rgba(255, 255, 255, .28);
-}
-
-@media (prefers-color-scheme: light) {
-  input.liquid-glass-direct,
-  textarea.liquid-glass-direct,
-  [class*="liquid-glass-direct"] {
-    border-color: rgba(255, 255, 255, .75);
-  }
-}
-
-/* The rim highlight is tuned for light backgrounds; halve it on dark. */
-@media (prefers-color-scheme: dark) {
-  .liquid-glass::after {
-    background: linear-gradient(
-      var(--gradient-angle, 135deg),
-      rgba(255, 255, 255, .45) 0%,
-      rgba(255, 255, 255, .08) 25%,
-      rgba(255, 255, 255, .08) 75%,
-      rgba(255, 255, 255, .45) 100%
-    );
-  }
+  border: 1px solid rgba(255, 255, 255, .75);
 }
 
 /* -------------------------------------------------------------- components */
@@ -111,10 +112,7 @@ textarea.liquid-glass-direct,
   border-radius: 20px;
   overflow: hidden;
 }
-.btn.primary > .liquid-glass { background: rgba(255, 255, 255, .22); }
-@media (prefers-color-scheme: light) {
-  .btn.primary > .liquid-glass { background: rgba(255, 255, 255, .5); }
-}
+.btn.primary > .liquid-glass { background: rgba(255, 255, 255, .5); }
 
 /* Currency toggle: a small glass lozenge under the amount. */
 .currency {
@@ -146,22 +144,16 @@ textarea.liquid-glass-direct,
   border-radius: 26px 26px 0 0;
   overflow: hidden;
 }
-.sheet-backdrop { background: rgba(0, 0, 0, .28); }
-.sheet-item { border-top-color: rgba(255, 255, 255, .12); }
-.sheet-item:active { background: rgba(255, 255, 255, .12); }
+.sheet-backdrop { background: rgba(15, 23, 42, .22); }
+.sheet-item { border-top-color: rgba(0, 0, 0, .1); }
+.sheet-item:active { background: rgba(0, 0, 0, .06); }
 
 /* Sticky day header floats as glass while rows scroll under it. */
 .day {
   padding: 14px 16px 12px;
   overflow: hidden;
 }
-.row { border-top-color: rgba(255, 255, 255, .1); }
-
-@media (prefers-color-scheme: light) {
-  .sheet-item { border-top-color: rgba(0, 0, 0, .1); }
-  .sheet-item:active { background: rgba(0, 0, 0, .06); }
-  .row { border-top-color: rgba(0, 0, 0, .08); }
-}
+.row { border-top-color: rgba(0, 0, 0, .08); }
 
 /* ----------------------------------------------------------------- motion */
 /* Presses are driven by the Web Animations API in motion.js. The old CSS
@@ -177,15 +169,9 @@ textarea.liquid-glass-direct,
 
 .amount, .btn.primary, .row-note, .row-amount, .topbar-title, .who-name,
 .sheet-item, .login-title {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
-}
-@media (prefers-color-scheme: light) {
-  .amount, .btn.primary, .row-note, .row-amount, .topbar-title, .who-name,
-  .sheet-item, .login-title {
-    text-shadow: 0 1px 2px rgba(255, 255, 255, .55);
-  }
+  text-shadow: 0 1px 2px rgba(255, 255, 255, .6);
 }
 
 /* Placeholders lose contrast fastest against a moving backdrop. */
-.amount::placeholder { color: rgba(128, 132, 142, .5); }
+.amount::placeholder { color: rgba(120, 130, 150, .35); }
 .note::placeholder, .field::placeholder { color: var(--muted); }

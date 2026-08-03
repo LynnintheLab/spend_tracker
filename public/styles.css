@@ -1,8 +1,12 @@
+/* Light only — there is no dark theme. The glass and the blue dot field are
+   tuned for a bright background, so a dark variant would need its own tuning
+   rather than a palette swap. */
 :root {
-  --bg: #ffffff;
+  color-scheme: light;
+  --bg: #f6f8fc;
   --fg: #0f1115;
   --muted: #71767f;
-  --line: #e6e8ec;
+  --line: #e2e6ee;
   --accent: #0f1115;
   --accent-fg: #ffffff;
   --danger: #c2382f;
@@ -10,19 +14,6 @@
   --radius: 16px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1115;
-    --fg: #f2f4f7;
-    --muted: #8b919b;
-    --line: #23262d;
-    --accent: #f2f4f7;
-    --accent-fg: #0f1115;
-    --danger: #ff6b60;
-    --sheet: #171a20;
-  }
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
